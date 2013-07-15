@@ -22,17 +22,63 @@
 
 \chapter{Giriş}
 
+İnternet ve Veri Güvenliği dersi kapsamında, kullanıcıların kayıt olup giriş yapacakları, şifre değiştirme, şifre silme, kullanıcı hesabı silme gibi temel fonksiyonları olan bir sistemi güvenli bir şekilde tasarlamamız ve implement etmemiz gerekmektedir.
+
+Bu raporda, proje kapsamında uyguladığımız güvenlik prensiplerinden bahsedip, bu prensipleri nasıl implement ettiğimizin detaylarını anlatacağız.
+
 \section{Yapı}
+
+Bu proje kapsamında gerçekleştireceğimiz uygulama bir web uygulaması olacaktır. Kullanıcılar internet tarayıcılarını kullanarak sistem ile etkileşim içinde olacaklardır. Değerli bilgiler, güvenli olmayan internet kanalı ile sunucu ve istemci arasında gidecektir. Bu nedenle güvenliğini sağlamamız gereken 3 yer vardır.
+
+\begin{enumerate}
+\item Sunucu güvenliği
+\item İstemci güvenliği
+\item Haberleşme kanalı güvenliği
+\end{enumerate}
+
 \section{Kullanılan Araçlar ve Kütüphaneler}
 
 \chapter{Temel Güvenlik}
+\section{Hazır Kripto Kütüphanesi Kullanmak}
+Kripto araçlarının tanımının açıkça yapılmış olması, bu araçların güvenliği için olmazsa olmaz şartlardan biridir. Auguste Kerckhoffs, "Bir kripto sistemi, sistem hakkındaki anahtar hariç her detay açıkça bilindiği halde bile güvenli olmalıdır."\cite{kerckhoffs} diyerek \emph{Kerckhoffs İlkesi} olarak bilinen ilkeyi ortaya atmıştır.
+
+Fakat tanımı açık olsa da kripto araçlarını deneyimsiz insanların implement etmesi çeşitli güvenlik zaaflarına neden olmaktadır. Örnek vermek gerekirse, iki hash değeri karşılaştırılırken, fark görüldüğü anda algoritmanın sonlanması, zamanlama saldırılarına temel hazırlamaktadır.
+
+Zamanlama saldırılarının ciddiyeti konusundaki en önemli örnek Java'nın standart kütüphanesinde yer alan \texttt{java.security.MessageDigest} sınıfının \texttt{isEqual} methodudur. Bu method implementasyonundaki nedeniyle zamanlama saldırılarına karşı zaafiyeti keşfedilmiştir. Bu zaafiyet Java SE 6 Update 17 güncellemesi ile kapatılmıştır \cite{javavul}.
+
+Bu nedenlerden dolayı kripto ihtiyaçlarımızı, deneyimli insanlar tarafından implement edilmiş ve iyi test edilmiş kütüphaneler ile sağlamamız tavsiye edilmektedir. Biz de bu nedenle \emph{pycripto} kütüphanesini kullanmaya karar verdik.
 
 \chapter{Sunucu Tarafı Güvenliği}
+\section{Sistem Güvenliği}
+\subsection{Güvenilir Kaynaklardan Yazılım Yüklemek}
+\subsection{Uzaktan Erişimin Güvenliğini Arttırmak}
+\section{Veri Tabanı Güvenliği}
+\subsection{Veri Tabanına Kısıtlamak}
+\section{Uygulamanın Güvenliği}
+\subsection{Şifrelerin Açık Bir Şekilde Saklanmaması}
+\subsection{Hash İşlemi Sırasında Salt Kullanılması}
+\subsection{Hash İşlemini İteratif Yapılması}
 
-\chapter{Kanal Güvenliği}
+\chapter{Haberleşme Kanalı Güvenliği}
 
 \chapter{Kullanıcı Tarafı Güvenliği}
 
 \chapter{Sonuç}
+
+
+\begin{thebibliography}{9}
+
+\bibitem{kerckhoffs}
+  Auguste Kerckhoffs,
+  "La cryptographie militaire",
+  \emph{Journal des sciences militaires},
+  vol. IX,
+  1883
+
+\bibitem{javavul}
+  Java SE 6 Update 17, \emph{Update Release Notes} \\
+  \url{http://www.oracle.com/technetwork/java/javase/6u17-141447.html}
+
+\end{thebibliography}
 
 \end{document}
