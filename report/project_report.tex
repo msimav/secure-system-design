@@ -38,6 +38,23 @@ Bu proje kapsamında gerçekleştireceğimiz uygulama bir web uygulaması olacak
 
 \section{Kullanılan Araçlar ve Kütüphaneler}
 
+Bu sistemi yaparken kullanacağımız pek çok araç vardır. İlk olarak geliştireceğimiz uygulamayı \emph{Python} dili ile \emph{flask} framework'ünü kullanarak yazacağız. Ayrıca kullanıcı arayüzü için \emph{HTML} ve \emph{JavaScript} kullanacağız. Web uygulamamızı çalıştırabilmek için, web sunucu uygulaması olarak da \emph{uwsgi} ve \emph{nginx} kullanacağız. SSL desteğini de \emph{nginx} sayesinde kazanacağız. Bütün bu uygulamaların üzerinde çalıştığı işletim sistemi olarak da \emph{Debian} tercih ettik. Kullanıcı bilgilerini tutacağımız veri tabanı olarak da \emph{mongodb}'yi seçtik. Python ve mongodb arasındaki iletişim için pymongo kütüphanesini, kripto araçları için \emph{pycrypto} kütüphanesini, kullanıcının IP adresine göre konumunu almak için \emph{pygeoip} kütüphanesini kullanıyoruz.
+
+Kullandığımız bütün bu araçları liste halinde sunmamız gerekirse:
+
+\begin{enumerate}
+\item Debian 7 Wheezy 64 bit
+\item python 2.7.3
+\item uwsgi 1.9.13
+\item flask 0.10
+\item pymongo 2.5.2
+\item mongodb 2.0.6
+\item nginx 1.2.1
+\item pycrypto 2.6
+\item pygeoip 0.2.7
+\end{enumerate}
+
+
 \chapter{Temel Güvenlik}
 \section{Hazır Kripto Kütüphanesi Kullanmak}
 Kripto araçlarının tanımının açıkça yapılmış olması, bu araçların güvenliği için olmazsa olmaz şartlardan biridir. Auguste Kerckhoffs, "Bir kripto sistemi, sistem hakkındaki anahtar hariç her detay açıkça bilindiği halde bile güvenli olmalıdır."\cite{kerckhoffs} diyerek \emph{Kerckhoffs İlkesi} olarak bilinen ilkeyi ortaya atmıştır.
@@ -46,7 +63,7 @@ Fakat tanımı açık olsa da kripto araçlarını deneyimsiz insanların implem
 
 Zamanlama saldırılarının ciddiyeti konusundaki en önemli örnek Java'nın standart kütüphanesinde yer alan \texttt{java.security.MessageDigest} sınıfının \texttt{isEqual} methodudur. Bu method implementasyonundaki nedeniyle zamanlama saldırılarına karşı zaafiyeti keşfedilmiştir. Bu zaafiyet Java SE 6 Update 17 güncellemesi ile kapatılmıştır \cite{javavul}.
 
-Bu nedenlerden dolayı kripto ihtiyaçlarımızı, deneyimli insanlar tarafından implement edilmiş ve iyi test edilmiş kütüphaneler ile sağlamamız tavsiye edilmektedir. Biz de bu nedenle \emph{pycripto} kütüphanesini kullanmaya karar verdik.
+Bu nedenlerden dolayı kripto ihtiyaçlarımızı, deneyimli insanlar tarafından implement edilmiş ve iyi test edilmiş kütüphaneler ile sağlamamız tavsiye edilmektedir. Biz de bu nedenle \emph{pycrypto} kütüphanesini kullanmaya karar verdik.
 
 \chapter{Sunucu Tarafı Güvenliği}
 \section{Sistem Güvenliği}
