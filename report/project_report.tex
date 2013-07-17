@@ -11,10 +11,10 @@
 
 \title{\textbf{Bil 553} \\ İnternet ve Veri Güvenliği}
 \author{Mustafa Simav \\
-        ms@msimav.net
+       091101036
     \and
         Burak Dikili \\
-        burakdikili@gmail.com}
+        091101062}
 \date{Yaz 2013}
 \begin{document}
 
@@ -66,17 +66,101 @@ Zamanlama saldırılarının ciddiyeti konusundaki en önemli örnek Java'nın s
 Bu nedenlerden dolayı kripto ihtiyaçlarımızı, deneyimli insanlar tarafından implement edilmiş ve iyi test edilmiş kütüphaneler ile sağlamamız tavsiye edilmektedir. Biz de bu nedenle \emph{pycrypto} kütüphanesini kullanmaya karar verdik.
 
 \chapter{Sunucu Tarafı Güvenliği}
-\section{Sistem Güvenliği}
+
+\section{İşletim Sistemi Güvenliği}
+
+Kullanıcı bilgilerinin güvenliğinin sağlanmasının ilk adımı, uygulamanın çalışacağı sunucu üzerinde güvenlik önlemleri almaktır. Bu önlemlerin ilk adımı da sunucu üzerinde çalışan işletim sisteminin güvenliğidir.
+
+Biz işletim sistemi olarak \emph{Debian 7 Wheezy 64 Bit} kullanmayı seçtik. Aşağıdaki maddeler ile debian işletim sistemini nasıl daha güvenli yapabileceğimiz tartışılmaktadır.
+
 \subsection{Güvenilir Kaynaklardan Yazılım Yüklemek}
+
+GNU/Linux sistemler gerek kernel'inin yapısı gerekse üzerinde çalışan programların güvenliği temel ilke kabul etmelerinden dolayı güvenlidir \cite{linuxsec}. Sistemin güvenliği önündeki en büyük engel bilinmeyen kaynaklardan yazılım yüklemektir.
+
+Biz yüklediğimiz bütün yazılımları \emph{Debian depolarından} yükleyerek bu sorunun önüne geçtik. Ayrıca debian depolarındaki yazılımlar güvenlik yamaları da yapılmış olduğu için işletim sisteminin yazılım bazında güvenliğini sağladık.
+
 \subsection{Uzaktan Erişimin Güvenliğini Arttırmak}
+
+Sunucu bilgisayara uzaktan erişim, oluşan hataların tespitini ve çözümünü kolaylaştıran çok önemli bir özelliktir. Debian kurulduğunda, şifrelenmiş bir bağlantı üzerinden uzaktan erişime imkan veren \emph{openssh} programı ile beraber gelir. Bu program güvenli iletişimi sağlar fakat saldırganın şifreyi kaba kuvvet ile deneyerek bulma imkanı vardır.
+
+Bruteforce saldırılarını önlemek için yapılabilecek pek çok şey vardır \cite{blog}. Bunlardan en önemli ikisi şunlardır.
+
+\begin{enumerate}
+\item root kullanıcısının login özelliğini kapatmak
+\item şifre ile login özelliğini kapatıp, sadece açık anahtar ile login olmak
+\end{enumerate}
+
+Biz bu iki yöntemi de uyguladık. Bunu yapmak için önce kendi ssh açık anahtarımızı sunucuya yerleştirdik ve ardından \texttt{/etc/ssh/sshd\_config} dosyasını aşağıdaki gibi değiştirdik.
+
+\begin{lstlisting}[caption=OpenSSH Ayarları]
+PermitRootLogin no
+PasswordAuthentication no
+PubkeyAuthentication yes
+\end{lstlisting}
+
+Bu yöntemlerden root kullanıcısının login özelliğini kısıtlamanın hiç bir sakıncası yoktur. Şifre ile oturum açmayı iptal etmeknin sakıncaları ile gizli anahtarımızın olmadığı bilgisayarlardan oturum açamama ve gizli anahtarı kaybetme durumunda saldırganın sunucuya erişim sağlamasıdır. Fakat biz güvenlik konusunda bilgili olduğumuz ve gizli anahtarlarımızın güvenliğini sağladığımız için bu bir sorun olmayacaktır.
+
+\subsection{Güvenlik Duvarı}
+
+Linux çekirdeği güçlü bir firewall olan \emph{iptables} ile birlikte gelmektedir. Basitçe ayarlandıktan sonra güçlü bir koruma sağlamaktadır.
+
+\begin{lstlisting}[caption=IPtables Ayarları,basicstyle=\footnotesize]
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [748:52299]
+:TCP - [0:0]
+:UDP - [0:0]
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+-A TCP -p tcp --dport 80 -j ACCEPT
+-A TCP -p tcp --dport 443 -j ACCEPT
+-A TCP -p tcp --dport 22 -j ACCEPT
+-A INPUT -p icmp -m icmp --icmp-type 8 -m conntrack --ctstate NEW -j ACCEPT
+-A INPUT -p udp -m conntrack --ctstate NEW -j UDP
+-A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -m conntrack
+                           --ctstate NEW -j TCP
+-A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -p tcp -j REJECT --reject-with tcp-reset
+-A INPUT -j REJECT --reject-with icmp-proto-unreachable
+COMMIT
+\end{lstlisting}
+
+Yukarıdaki gibi ayarlandığında iptables sadece 80, 443 ve 22 numaralı portlardan gelen istekleri kabul edecektir. Diğer bütün istekler \emph{iptables} tarafından düşürülecektir.
+
 \section{Veri Tabanı Güvenliği}
-\subsection{Veri Tabanına Kısıtlamak}
+
+Veritabanı, kullanıcı bilgilerinin saklandığı yer olduğu için saldırganlar veritabanına da saldıracaktır. Bu nedenle veritabanın güvenliğinin de sağlanması gerekmektedir.
+
+\subsection{Veri Tabanına Erişimi Kısıtlamak}
+
+Veritabanına erişimin kısıtlanması, sunucuya sızmış olan saldırganın işlerini zorlaştıracaktır. Bu nedenle yapılması gereklidir.
+
+Biz vertabanı olarak \emph{mongodb} kullanıyoruz. \emph{Mongodb}'de kullanıcı oluşturmak için öncelikle \texttt{mongo} komutunu çalıştırıp \emph{mongo shell}'e girmeli ve ardından kullanıcı eklenmelidir.
+
+\begin{lstlisting}[caption=MongoDB Kullanıcı Ekleme]
+use admin
+db.addUser('dbusername', 'verysecurepassword');
+\end{lstlisting}
+
+Daha sonra \texttt{/etc/mongodb.conf} dosyasında \emph{auth = true} satırı aktif hale getirilmeli ve \emph{mongod} servisi yeniden başlatılmalıdır. Bu sayede \emph{mongodb} artık oturum açmadan kullanılamayacaktır.
+
+\subsection{SQL Injection Saldırılarına Karşı Önlem Almak}
+
+Veritabanı üzerindeki diğer bir güvenlik tehtidi de \emph{SQL Injection} yöntemidir. Bu yöntem, kötü programcıların SQL ifadelerini string işlemleri ile oluşturmalarından dolayı oluşan bir açıktır.
+
+Biz veritabanı tercihimizi NoSQL bir veritabanı olan \emph{mongodb}'den yana kullandığımız için SQL Injection saldırılarına karşı zaten güvendeyiz.
+
 \section{Uygulamanın Güvenliği}
 \subsection{Şifrelerin Açık Bir Şekilde Saklanmaması}
 \subsection{Hash İşlemi Sırasında Salt Kullanılması}
 \subsection{Hash İşlemini İteratif Yapılması}
 
 \chapter{Haberleşme Kanalı Güvenliği}
+\section{İletişimin Şifrelenmesi için SSL protokolünü kullanmak}
+\section{SSL Üzerinde Çalışan Protokolün Güvenliği}
+
 
 \chapter{Kullanıcı Tarafı Güvenliği}
 
@@ -95,6 +179,16 @@ Bu nedenlerden dolayı kripto ihtiyaçlarımızı, deneyimli insanlar tarafında
 \bibitem{javavul}
   Java SE 6 Update 17, \emph{Update Release Notes} \\
   \url{http://www.oracle.com/technetwork/java/javase/6u17-141447.html}
+
+\bibitem{linuxsec}
+  Jeffrey S. Smith,
+  "Why customers are flocking to Linux",
+  \emph{IBM},
+  2008-06-03.
+
+\bibitem{blog}
+  Mustafa Simav, \\
+  \url{http://msimav.net/2013/04/13/increasing-ssh-server-security/}
 
 \end{thebibliography}
 
