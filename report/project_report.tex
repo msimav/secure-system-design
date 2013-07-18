@@ -38,7 +38,7 @@ Bu proje kapsamında gerçekleştireceğimiz uygulama bir web uygulaması olacak
 
 \section{Kullanılan Araçlar ve Kütüphaneler}
 
-Bu sistemi yaparken kullanacağımız pek çok araç vardır. İlk olarak geliştireceğimiz uygulamayı \emph{Python} dili ile \emph{flask} framework'ünü kullanarak yazacağız. Ayrıca kullanıcı arayüzü için \emph{HTML} ve \emph{JavaScript} kullanacağız. Web uygulamamızı çalıştırabilmek için, web sunucu uygulaması olarak da \emph{uwsgi} ve \emph{nginx} kullanacağız. SSL desteğini de \emph{nginx} sayesinde kazanacağız. Bütün bu uygulamaların üzerinde çalıştığı işletim sistemi olarak da \emph{Debian} tercih ettik. Kullanıcı bilgilerini tutacağımız veri tabanı olarak da \emph{mongodb}'yi seçtik. Python ve mongodb arasındaki iletişim için pymongo kütüphanesini, kripto araçları için \emph{pycrypto} kütüphanesini, kullanıcının IP adresine göre konumunu almak için \emph{pygeoip} kütüphanesini kullanıyoruz.
+Bu sistemi yaparken kullanacağımız pek çok araç vardır. İlk olarak geliştireceğimiz uygulamayı \emph{Python} dili ile \emph{flask} framework'ünü kullanarak yazacağız. Ayrıca kullanıcı arayüzü için \emph{HTML} ve \emph{JavaScript} kullanacağız. Web uygulamamızı çalıştırabilmek için, web sunucu uygulaması olarak da \emph{uwsgi} ve \emph{nginx} kullanacağız. SSL desteğini de \emph{nginx} sayesinde kazanacağız. Bütün bu uygulamaların üzerinde çalıştığı işletim sistemi olarak da \emph{Debian} tercih ettik. Kullanıcı bilgilerini tutacağımız veri tabanı olarak da \emph{PostgreSQL}'i seçtik. Python ve PostgreSQL arasındaki iletişim için \emph{python-psycopg2} kütüphanesini, kripto araçları için \emph{pycrypto} kütüphanesini, kullanıcının IP adresine göre konumunu almak için \emph{pygeoip} kütüphanesini kullanıyoruz.
 
 Kullandığımız bütün bu araçları liste halinde sunmamız gerekirse:
 
@@ -47,8 +47,8 @@ Kullandığımız bütün bu araçları liste halinde sunmamız gerekirse:
 \item python 2.7.3
 \item uwsgi 1.9.13
 \item flask 0.10
-\item pymongo 2.5.2
-\item mongodb 2.0.6
+\item python-psycopg2 2.5.1
+\item PostgreSQL 9.1
 \item nginx 1.2.1
 \item pycrypto 2.6
 \item pygeoip 0.2.7
@@ -131,31 +131,47 @@ Yukarıdaki gibi ayarlandığında iptables sadece 80, 443 ve 22 numaralı portl
 
 \section{Veri Tabanı Güvenliği}
 
-Veritabanı, kullanıcı bilgilerinin saklandığı yer olduğu için saldırganlar veritabanına da saldıracaktır. Bu nedenle veritabanın güvenliğinin de sağlanması gerekmektedir.
+Veritabanı, kullanıcı bilgilerinin saklandığı yer olduğu için saldırganlar veritabanına da saldıracaktır. Bu nedenle veritabanın güvenliğinin de sağlanması gerekmektedir. PostgreSQL veritabanı daha güvenli hale getirmek için yapılabilecek bir kaç küçük işlem vardır.
 
 \subsection{Veri Tabanına Erişimi Kısıtlamak}
 
 Veritabanına erişimin kısıtlanması, sunucuya sızmış olan saldırganın işlerini zorlaştıracaktır. Bu nedenle yapılması gereklidir.
 
-Biz vertabanı olarak \emph{mongodb} kullanıyoruz. \emph{Mongodb}'de kullanıcı oluşturmak için öncelikle \texttt{mongo} komutunu çalıştırıp \emph{mongo shell}'e girmeli ve ardından kullanıcı eklenmelidir.
+Biz vertabanı olarak \emph{PostgreSQL} kullanıyoruz. \emph{PostgreSQL}'de kullanıcı oluşturmak için öncelikle \emph{postgres} kullanıcısı olarak oturum açmamız gereklidir. Bu nedenle \texttt{su - postgres} komutunu çalıştırılmalı ve ardından kullanıcı ve veritabanı eklenmelidir.
 
-\begin{lstlisting}[caption=MongoDB Kullanıcı Ekleme]
-use admin
-db.addUser('dbusername', 'verysecurepassword');
+\begin{lstlisting}[caption=PostgreSQL Kullanıcı ve Verıtabanı Ekleme]
+$ createuser guvenlik
+$ createdb -O guvenlik guvenlik
 \end{lstlisting}
 
-Daha sonra \texttt{/etc/mongodb.conf} dosyasında \emph{auth = true} satırı aktif hale getirilmeli ve \emph{mongod} servisi yeniden başlatılmalıdır. Bu sayede \emph{mongodb} artık oturum açmadan kullanılamayacaktır.
+Bu komutlar guvenlik isminde bir veritabanı ve bu veritabanını kullanma hakkı olan bir kullanıcı oluşturur. PostgreSQL'in varsayılan ayarlarına göre sadece \emph{guvenlik} ismindeki sistem kullanıcısı bu veritabanına erişebilir.
 
 \subsection{SQL Injection Saldırılarına Karşı Önlem Almak}
 
 Veritabanı üzerindeki diğer bir güvenlik tehtidi de \emph{SQL Injection} yöntemidir. Bu yöntem, kötü programcıların SQL ifadelerini string işlemleri ile oluşturmalarından dolayı oluşan bir açıktır.
 
-Biz veritabanı tercihimizi NoSQL bir veritabanı olan \emph{mongodb}'den yana kullandığımız için SQL Injection saldırılarına karşı zaten güvendeyiz.
+Bu hatalara örnek, SQL ifadelerinin python string format operatörü olan \emph{\%} işareti ile oluşturmaktır.
+
+\begin{lstlisting}[caption=Python-psycopg2 SQL Injection]
+SQL = "SELECT * FROM users WHERE mail = %s AND passwd = %s" %
+             (mail, passwd)
+cursor.execute(SQL)
+\end{lstlisting}
+
+Bu hatalardan korunmanın yöntemi ise argümanları \texttt{execute} fonksiyonuna parametre olarak vermektir.
+
+\begin{lstlisting}[caption=Python-psycopg2 SQL Injection]
+SQL = "SELECT * FROM users WHERE mail = %s AND passwd = %s"
+cursor.execute(SQL, (mail, passwd))
+\end{lstlisting}
+
+Biz de programın kodlaması sırasında SQL ifadelerimizi bu prensibe uygun oluşturduk.
 
 \section{Uygulamanın Güvenliği}
 \subsection{Şifrelerin Açık Bir Şekilde Saklanmaması}
 \subsection{Hash İşlemi Sırasında Salt Kullanılması}
 \subsection{Hash İşlemini İteratif Yapılması}
+\subsection{Hash Karşılaştırırken Zamanlama Saldırılarından Kaçınma}
 
 \chapter{Haberleşme Kanalı Güvenliği}
 \section{İletişimin Şifrelenmesi için SSL protokolünü kullanmak}
