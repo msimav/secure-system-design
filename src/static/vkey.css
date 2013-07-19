@@ -1,0 +1,34 @@
+/* vkey v1.0 by marco @ tehwebmaster.blogspot.com */
+
+#vkey {
+    display: none;
+    position: absolute;
+    left:563px;
+    top:133px;
+    padding: 10px;
+    width: 240px;
+    text-align: center;
+    line-height: 22px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+.vkey_key {
+    font-family: monospace;
+    margin: 1px;
+    padding: 3px 7px;
+    border: 1px solid #ccc;
+    font-size: 10px;
+    text-decoration: none;
+    color: #000;
+}
+
+.vkey_key:hover {
+    background-color: #ccc;
+    color: #fff;
+}
+
+h1 {
+    margin: 10px auto;
+    font-family: Verdana;
+}

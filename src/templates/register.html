@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <title>Demo</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="/static/vkey.css" type="text/css" />
+    <script type="text/javascript" src="/static/vkey.js"></script>
+    <script type="text/javascript" src="/static/drag.js"></script>
+    <script type="text/javascript" src="/static/karistir.js"></script>
+  </head>
+  <body>
+    <div id ="vkey" onmousedown="drag_start(this)">
+
+    </div>
+    {% if error %}
+    <h1>{{ error }}!</h1>
+    {% endif %}
+    <table border = "0" align = "center">
+      <form method="POST" action="/register">
+	<tr>
+	  <td>E-mail: </td>
+	  <td><input type="text" id ="mail" name="mail"><br></td>
+
+	</tr>
+	<tr>
+	  <td>Password: </td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="password" name="password"/></td>
+
+	</tr>
+	<tr>
+	  <td>Password(Again): </td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="password2" name="password2"/></td>
+
+	</tr>
+	<tr>
+	  <td><input type="submit" value="Submit"></td>
+	  <td><input type="button" value="Virtual keyboard" onclick="ackapa() " /></td>
+	</tr>
+	<tr>
+	  <td colspan ="2" align = "center">
+	    <a href="/login">Login Page</a>
+	  <td>
+	</tr>
+      </form>
+    </table>
+  </body>
+</html>
