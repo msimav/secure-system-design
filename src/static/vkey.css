@@ -3,12 +3,12 @@
 #vkey {
     display: none;
     position: absolute;
-    left:563px;
-    top:133px;
+    left: 820px;
+    top: 150px;
     padding: 10px;
-    width: 240px;
+    width: 260px;
     text-align: center;
-    line-height: 22px;
+    line-height: 26px;
     border: 1px solid #ccc;
     background-color: #fff;
 }
@@ -29,6 +29,7 @@
 }
 
 h1 {
-    margin: 10px auto;
+    margin: 0 auto;
+    text-align: center;
     font-family: Verdana;
 }

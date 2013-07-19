@@ -44,10 +44,11 @@ function vkey_cls() {
 window.onload = function() {
 	var inputs = document.getElementsByTagName('input');
 	for (i = 0; i < inputs.length; i++) {
-		if (inputs[i].type == 'text' || inputs[i].type == 'password') {
-			inputs[i].onfocus = function() {
-				vkey_focus = this;
-			}
+		if (inputs[i].type == 'password') {
+		    inputs[i].onfocus = function() {
+			vkey_load();
+			vkey_focus = this;
+		    };
 		}
 	}
 	degistir();
