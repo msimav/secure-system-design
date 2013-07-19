@@ -168,17 +168,69 @@ cursor.execute(SQL, (mail, passwd))
 Biz de programın kodlaması sırasında SQL ifadelerimizi bu prensibe uygun oluşturduk.
 
 \section{Uygulamanın Güvenliği}
-\subsection{Şifrelerin Açık Bir Şekilde Saklanmaması}
-\subsection{Hash İşlemi Sırasında Salt Kullanılması}
-\subsection{Hash İşlemini İteratif Yapılması}
-\subsection{Hash Karşılaştırırken Zamanlama Saldırılarından Kaçınma}
 
+Sunucu bilgisayarın ve veritabanının güvenliğini sağladıktan sonra, geliştirdiğimiz uygulama içinde de güvenlik önlemleri almamız gerekmektedir.
+
+\subsection{Şifrelerin Açık Bir Şekilde Saklanmaması}
+
+Şifrelerin veritabanında açıkça saklanması, veritabanının ele gecirilmesi durumunda kullanıcılar açısından sorun oluşturabilir. Bu nedenle şiflerelerin gizli bir şekilde saklanması daha uygundur.
+
+Bu işlem için de kripto bize \emph{özet (hash) fonksiyonları} sunar. Hash fonksiyonu, $H: X \rightarrow Y$ üzerinde tanımlı, bire bir eşleme yapan, deterministik bir fonksiyondur. Yapısı gereği her şifre stringini bir hash değerine eşler. Bu nedenle şifre bilindiğinde, şifre kontrolü mümkün iken, hash bilindiğinde şifreye ulaşmak imkansızdır.
+
+Biz de bu projede \emph{SHA256} algoritmasını kullanarak şifreleri saklıyor. \emph{SHA256}'yı şu anda kullanılması tavsiye edilen algoritma olduğu için seçtik.
+
+\begin{lstlisting}[caption=Python SHA256 Kullanımı]
+hash = SHA256.new()
+hash.update(passwd)
+message = hash.hexdigest()
+\end{lstlisting}
+
+\subsection{Hash İşlemi Sırasında Salt Kullanılması}
+
+Şifrelerin sadece hash olarak saklanması yöntemi, çevrimdışı bir saldırı olan \emph{Rainbow Saldırılarına} karşı zaafiyet içermektedir. Bu nedenle şifrenin başına rastgele üretilen bir \emph{tuz (salt)} değeri koyularak, saldırganın elindeki önceden hesaplanmış tablo geçersiz hale getirilir.
+
+Unix işletim sistemlerinde şifreler saklanırken 128 bitlik bir salt değeri kullanılmaktadır \cite{unixsalt}. Biz de bu nedenle \emph{pycryto} kütüphanesi içindeki \emph{kriptografik rastgele sayı üretici} ile 128 bitlik sayı üreterek bunu salt olarak kullanıyoruz.
+
+\begin{lstlisting}[caption=Python salt ile SHA256 Kullanımı]
+salt = Random.new().read(128)
+hash = SHA256.new()
+hash.update(salt + passwd)
+message = hash.hexdigest()
+\end{lstlisting}
+
+
+\subsection{Hash İşlemini İteratif Yapılması}
+
+Tuzlama yöntemi de elinde yeterince hesaplama gücü olan saldırganlara karşı tam güvenlik sağlamamaktadır. Bu işlemi zorlaştırmak için hash işlemi iteratif yapılabilir. Bu durumda saldırganın her girdi için harcayacağı işlem gücü artacak ve dolayısıyla şifreyi öğrenme olasılığı azalacaktır.
+
+Hash işlemini 1000 kez yapmak, sunucu için çok küçük bir yük getircektir. Bu nedenle bu tekniği uygulamak sorun oluşturmayacaktır.
+
+\begin{lstlisting}[caption=Python iteratif SHA256 Kullanımı]
+def digest_passwd(passwd, salt):
+    hash = SHA256.new()
+    hash.update(salt + passwd)
+    message = hash.digest()
+
+    for i in range(1000):
+        hash = SHA256.new()
+        hash.update(message)
+        message = hash.digest()
+
+    return hash.hexdigest()
+\end{lstlisting}
+
+Yukarıdaki kod bizim implementasyonumuzdan alınmıştır. Şifreyi \emph{salt} kullanarak \emph{1000} kez hash'ler.
+\subsection{Hash Karşılaştırırken Zamanlama Saldırılarından Kaçınma}
 \chapter{Haberleşme Kanalı Güvenliği}
+
 \section{İletişimin Şifrelenmesi için SSL protokolünü kullanmak}
 \section{SSL Üzerinde Çalışan Protokolün Güvenliği}
 
 
 \chapter{Kullanıcı Tarafı Güvenliği}
+\section{Keylogger'lara Karşı Sanal Klavye}
+\section{Fare Hareketlerinin Dinlenmesine Karşı Rastgele Tuşlar}
+\section{Farklı Ülkelerden Oturum Açmaya Karşı Hesap Kilitleme}
 
 \chapter{Sonuç}
 
@@ -205,6 +257,11 @@ Biz de programın kodlaması sırasında SQL ifadelerimizi bu prensibe uygun olu
 \bibitem{blog}
   Mustafa Simav, \\
   \url{http://msimav.net/2013/04/13/increasing-ssh-server-security/}
+
+\bibitem{unixsalt}
+  Alexander, Steven, 
+  \emph{"Password Protection for Modern Operating Systems"},
+  2004
 
 \end{thebibliography}
 
