@@ -2,20 +2,22 @@
   <head>
     <title>Aktivasyon</title>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="vkey.css" type="text/css" />
-    <script type="text/javascript" src="vkey.js"></script>
-    <script type="text/javascript" src="drag.js"></script>
-    <script type="text/javascript" src="karistir.js"></script>
+    <link rel="stylesheet" href="/static/vkey.css" type="text/css" />
+    <script type="text/javascript" src="/static/vkey.js"></script>
+    <script type="text/javascript" src="/static/drag.js"></script>
+    <script type="text/javascript" src="/static/karistir.js"></script>
   </head>
   <body>
     <div id ="vkey" onmousedown="drag_start(this)">
 
     </div>
     <table align = "center">
-      <tr><td>E-posta</td><td><input type="text" id="mail" name="mail"/></td></tr>
-      <tr><td>Aktivasyon Kodu</td><td><input type="text" id="aktivasyon" name="aktivasyon"/></td></tr>
+      <form method="POST" action="/activate">
+      <tr><td>E-posta</td><td><input type="text" id="mail" name="mail" value="{{ mail }}" /></td></tr>
+      <tr><td>Aktivasyon Kodu</td><td><input type="text" id="activation" name="activation" value="{{ accode }}" /></td></tr>
       <tr><td>Şifre</td><td><input type="password" id="password" name="password"/></td></tr>
       <tr><td><input type="submit" value="Submit"></td><td><input type="button" value="Virtual keyboard" onclick="ackapa() " /></td></tr>
+      </form>
     </table>
   </body>
 </html>

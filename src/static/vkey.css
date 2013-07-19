@@ -28,8 +28,13 @@
     color: #fff;
 }
 
-h1 {
+h1, h4 {
     margin: 0 auto;
     text-align: center;
     font-family: Verdana;
+    color: #ca3838;
+}
+
+.ok {
+    color: #58c026;
 }

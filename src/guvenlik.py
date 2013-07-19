@@ -7,6 +7,7 @@ from Crypto.Hash import SHA256
 from Crypto import Random
 from base64 import b64encode
 from pygeoip import GeoIP
+from datetime import datetime, timedelta
 
 from flask import Flask, request, session
 from flask import render_template, url_for, redirect
@@ -38,7 +39,7 @@ def login():
             if verify_passwd(passwd, user[3], user_pass):
                 if user[5] == get_country(request.remote_addr):
                     session['user'] = user
-                    session['is_active'] = user[4]
+                    session['is_active'] = user[4] == 1
                     return redirect(url_for('profile'))
                 else:
                     random_str = generate_random_str()
@@ -75,11 +76,13 @@ def create_user():
             con.commit()
 
             session['user'] = user
-            session['is_active'] = user[4]
+            session['is_active'] = user[4] == 1
             session['activate_hash'] = random_str
             send_mail(user[1], 'Aktivasyon',
                       strings.activate(user[1],
-                                       get_link('activate', random_str)))
+                                       get_link('activate',
+                                                {'h': random_str,
+                                                 'mail': user[1]})))
             return redirect(url_for('profile'))
         else:
             return render_template('register.html', error='Invalid mail address')
@@ -92,9 +95,43 @@ def forgotpassword():
     pass
 
 
-@app.route('/activate')
+@app.route('/activate', methods=['GET', 'POST'])
 def activate():
-    pass
+    SQL_USER = 'SELECT * FROM users u WHERE u.mail = %s;'
+    SQL_ACT = 'SELECT * FROM activate a WHERE a.uid = %s AND hash = %s;'
+    SQL_DEL = 'DELETE FROM activate a WHERE a.id = %s; DELETE FROM users u WHERE u.id = %s;'
+    SQL_OK = 'DELETE FROM activate a WHERE a.id = %s; UPDATE users SET is_active = 1 WHERE id = %s;'
+
+    if request.method == 'POST':
+        mail = request.form['mail']
+        passwd = request.form['password']
+        accode = request.form['activation']
+
+        cursor.execute(SQL_USER, (mail, ))
+        user = cursor.fetchone()
+        cursor.execute(SQL_ACT, (user[0], accode))
+        act = cursor.fetchone()
+        now = datetime.now()
+
+        if (now - act[3]) > timedelta(hours=1):
+            cursor.execute(SQL_DEL, (act[0], user[0]))
+            con.commit()
+            return render_template('login.html', error='Time Limit Exceeded, Try Again')
+
+        if verify_passwd(passwd, user[3], user[2]):
+            cursor.execute(SQL_OK, (act[0], user[0]))
+            con.commit()
+            session['is_active'] = True
+            return redirect(url_for('profile'))
+        else:
+            cursor.execute(SQL_DEL, (act[0], user[0]))
+            con.commit()
+            return render_template('login.html', error='Invalid username/password, Register Again')
+
+    else:
+        mail = request.args.get('mail', '')
+        accode = request.args.get('h', '')
+        return render_template('activation.html', mail=mail, accode=accode)
 
 
 @app.route('/profile')
@@ -109,10 +146,10 @@ def profile():
     return render_template('profile.html', mail=user[1], error=error)
 
 
-def get_link(action, random_str):
+def get_link(action, args):
     from urllib import urlencode
     return 'http://10.10.29.39/{0}?{1}'.format(action,
-                                               urlencode({'h': random_str}))
+                                               urlencode(args))
 
 
 def send_mail(to, subject, mail):
@@ -137,7 +174,7 @@ def lock_user(user, random_str):
 
     send_mail(user[1], 'Aktivasyon',
               strings.unlock(user[1],
-                             get_link('activate', random_str)))
+                             get_link('unlock', {'h': random_str})))
 
 
 def get_country(ip):
