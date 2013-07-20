@@ -1,0 +1,61 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Şifre Değiştirme</title>
+    <link rel="stylesheet" href="/static/vkey.css" type="text/css" />
+    <script type="text/javascript" src="/static/vkey.js"></script>
+    <script type="text/javascript" src="/static/drag.js"></script>
+    <script type="text/javascript" src="/static/karistir.js"></script>
+    <script>
+      function control(){
+      var name = document.myForm.yeniSifre.value;
+      var name2 = document.myForm.yeniSifreTekrar.value;
+      var name3 = document.myForm.eskiSifre.value;
+
+      if(name !== "" && name2 !== "" && name3 !== ""){
+          if(name !== name2){
+              alert('Girdiğiniz şifreyi kontrol ediniz');
+              var name = document.forms['myForm']['yeniSifre'].value="";
+              var name2 = document.forms['myForm']['yeniSifreTekrar'].value="";
+              return false;
+          }
+      }
+      else {
+          alert('Bütün boşlukları doldurunuz.');
+          document.forms['myForm']['yeniSifre'].value = "";
+          document.forms['myForm']['yeniSifreTekrar'].value="";
+          document.forms['myForm']['eskiSifre'].value="";
+          return false;
+          }
+      }
+    </script>
+  </head>
+  <body>
+    <div id ="vkey" onmousedown="drag_start(this)">
+
+    </div>
+    {% if error %}
+    <h1>{{ error }}</h1>
+    {% endif %}
+    <form name="myForm" action="/changepass" onsubmit="return control()" method="POST">
+      <table border = "0" align = "center">
+	<tr>
+	  <td>Eski Şifre</td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="eskiSifre" name="eskiSifre"/></td>
+	</tr>
+	<tr>
+	  <td>Yeni Şifre</td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="yeniSifre" name="yeniSifre"/></td>
+	</tr>
+	<tr>
+	  <td>Yeni Şifre(Tekrar)</td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="yeniSifreTekrar" name="yeniSifreTekrar"/></td>
+	</tr>
+	<tr>
+	  <td><input type="submit" value="Submit"></td>
+	  <td><input type="button" value="Virtual keyboard" onclick="ackapa() " /></td>
+	</tr>
+      </table>
+    </form>
+  </body>
+</html>

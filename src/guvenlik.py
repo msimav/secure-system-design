@@ -21,6 +21,13 @@ gip = GeoIP('/usr/share/GeoIP/GeoIP.dat')
 
 
 @app.route('/')
+def main():
+    if 'user' in session:  # If already logged in
+        return redirect(url_for('profile'))
+    else:
+        return redirect(url_for('login'))
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user' in session:  # If already logged in
@@ -59,6 +66,9 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def create_user():
+    if 'user' in session:  # If already logged in
+        return redirect(url_for('profile'))
+
     SQL = 'INSERT INTO users (mail, password, salt, is_active, last_loc) VALUES (%s, %s, %s, 0, %s) RETURNING *;'
     SQL_MAIL = 'INSERT INTO activate (uid, hash) VALUES (%s, %s);'
 
@@ -92,7 +102,101 @@ def create_user():
 
 @app.route('/forgotpassword')
 def forgotpassword():
-    pass
+    if 'user' in session:  # If already logged in
+        return redirect(url_for('profile'))
+
+    SQL_USER = 'SELECT * FROM users u WHERE u.mail = %s;'
+    SQL_ACT = 'SELECT * FROM activate a WHERE a.uid = %s AND hash = %s;'
+    SQL_DEL = 'DELETE FROM activate a WHERE a.id = %s;'
+
+    code = request.args.get('h', '')
+    mail = request.args.get('mail', '')
+
+    if code and mail:
+        cursor.execute(SQL_USER, (mail, ))
+        user = cursor.fetchone()
+        cursor.execute(SQL_ACT, (user[0], code))
+        act = cursor.fetchone()
+        now = datetime.now()
+
+        cursor.execute(SQL_DEL, (act[0], ))
+        con.commit()
+
+        if (now - act[3]) > timedelta(hours=1):
+            return render_template('mail.html', error='Time Limit Exceeded For Your Request')
+        else:
+            session['reset'] = user[0]
+            return render_template('newpasswd.html')
+    else:
+        return render_template('mail.html')
+
+
+@app.route('/requestpassword', methods=['POST'])
+def reqpassword():
+    if 'user' in session:  # If already logged in
+        return redirect(url_for('profile'))
+
+    SQL = 'INSERT INTO activate (uid, hash) VALUES (%s, %s);'
+
+    if request.method == 'POST':
+        mail = request.form['mail']
+        user = get_user(mail)
+        if user:
+            random_str = generate_random_str()
+            cursor.execute(SQL, (user[0], random_str))
+            send_mail(user[1], 'Şifre Sıfırlama',
+                      strings.reset(user[1],
+                                    get_link('forgotpassword',
+                                             {'h': random_str,
+                                              'mail': user[1]})))
+            return 'Mail adresinizi kontrol ediniz.'
+        else:
+            return render_template('mail.html', error='This email is not registered')
+    else:
+        return redirect(url_for('forgotpassword'))
+
+
+@app.route('/newpassword', methods=['POST'])
+def newpassword():
+    if 'reset' not in session:  # There is no request
+        return redirect(url_for('main'))
+
+    SQL = 'UPDATE users SET password = %s, salt = %s WHERE id = %s;'
+
+    passwd = request.form['yeniSifre']
+    salt, hash = generate_digest(passwd)
+    cursor.execute(SQL, (hash, salt, session['reset']))
+    con.commit()
+    session.pop('reset', None)
+    return redirect(url_for('login'))
+
+
+@app.route('/changepass', methods=['GET', 'POST'])
+def changepassword():
+    if 'user' not in session:  # If not logged in
+        return redirect(url_for('login'))
+
+    SQL = 'UPDATE users SET password = %s, salt = %s WHERE id = %s;'
+
+    if request.method == 'POST':
+        old = request.form['eskiSifre']
+        new = request.form['yeniSifre']
+        user = session['user']
+
+        if verify_passwd(old, user[3], user[2]):
+            salt, hash = generate_digest(new)
+            cursor.execute(SQL, (hash, salt, user[0]))
+            con.commit()
+
+            # Inform User About Change
+            send_mail(user[1], 'Şifre Değiştirildi',
+                      strings.change(user[1], request.remote_addr))
+
+            return redirect(url_for('profile'))
+        else:
+            return render_template('reset.html', error='Invalid Password')
+
+    return render_template('reset.html')
 
 
 @app.route('/activate', methods=['GET', 'POST'])
@@ -148,7 +252,7 @@ def profile():
 
 def get_link(action, args):
     from urllib import urlencode
-    return 'http://10.10.29.39/{0}?{1}'.format(action,
+    return 'http://bil553.com/{0}?{1}'.format(action,
                                                urlencode(args))
 
 

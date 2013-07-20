@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Şifre Değiştirme</title>
+    <link rel="stylesheet" href="/static/vkey.css" type="text/css" />
+
+    <script>
+      function mailControl(){
+      var x=document.forms["myForm"]["mail"].value;
+      var atpos=x.indexOf("@");
+      var dotpos=x.lastIndexOf(".");
+      if (atpos<1 || dotpos<atpos+2 || dotpos+2>=x.length){
+		  alert("Mail adresi yanlış girildi tekrar yazın");
+		  return false;
+		  }
+		  }
+		  </script>
+  </head>
+  <body>
+
+    {% if error %}
+    <h1>{{ error }}!</h1>
+    {% endif %}
+    <form name = "myForm" action = "/requestpassword" onsubmit = "return mailControl()" method = "post">
+      <table border = "0" align = "center">
+	<tr>
+	  <td>E-mail:</td>
+	  <td><input type = "text" id = "mail" name = "mail"/></td>
+	</tr>
+	<td colspan = "2" align = "center"><button type = "submit" name= "Submit">Gönder</button></td>
+	<tr>
+	</tr>
+      </table>
+    </form>
+  </body>
+</html>

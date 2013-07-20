@@ -1,0 +1,52 @@
+<html>
+  <head>
+    <meta charset = "utf-8">
+    <title>Yeni Şifre</title>
+    <link rel="stylesheet" href="/static/vkey.css" type="text/css" />
+    <script type="text/javascript" src="/static/vkey.js"></script>
+    <script type="text/javascript" src="/static/drag.js"></script>
+    <script type="text/javascript" src="/static/karistir.js"></script>
+    <script>
+      function newpassword(){
+      var a = document.myForm.yeniSifre.value;
+      var b = document.myForm.yeniSifreTekrar.value;
+
+      if(a !== "" && b !== ""){
+      if(a !== b){
+      alert("Şifreyi kontrol ediniz.");
+      document.forms["myForm"]["yeniSifre"].value = "";
+      document.forms["myForm"]["yeniSifreTekrar"].value = "";
+      return false;
+      }
+      }
+      else{
+      alert("Şifreyi kontrol ediniz.");
+      document.forms["myForm"]["yeniSifre"].value = "";
+      document.forms["myForm"]["yeniSifreTekrar"].value = "";
+      return false;
+      }
+      }
+    </script>
+  </head>
+  <body>
+    <div id ="vkey" onmousedown="drag_start(this)">
+
+    </div>
+    <form name = "myForm" action = "/newpassword" method = "post" onsubmit = "return newpassword()">
+      <table border = "1" align = "center">
+	<tr>
+	  <td>Yeni Şifre:</td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="yeniSifre" name="yeniSifre"/></td>
+	</tr>
+	<tr>
+	  <td>Yeni Şifre(Tekrar):</td>
+	  <td><input onkeypress="return disablekeys()" type="password" id="yeniSifreTekrar" name="yeniSifreTekrar"/></td>
+	</tr>
+	<tr align = "center">
+	  <td><button type = "submit" name= "Submit">Gönder</button></td></td>
+<td><input type="button" value="Sanal Klavye" onclick="ackapa()"></button></td>
+</tr>
+</table>
+</form>
+</body>
+</html>
