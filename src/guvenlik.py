@@ -295,9 +295,12 @@ def profile():
 
     user = session['user']
     error = None
+    active = True
     if not session['is_active']:
         error = u'Hesabınızı Aktif Etmeniz Gerekmektedir!'
-    return render_template('profile.html', mail=user[1], error=error)
+        active = False
+    return render_template('profile.html', mail=user[1],
+                           error=error, active=active)
 
 
 def get_link(action, args):
