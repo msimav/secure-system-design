@@ -302,7 +302,7 @@ def profile():
 
 def get_link(action, args):
     from urllib import urlencode
-    return 'http://bil553.com/{0}?{1}'.format(action,
+    return 'https://bil553.com/{0}?{1}'.format(action,
                                                urlencode(args))
 
 

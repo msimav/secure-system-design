@@ -6,6 +6,26 @@
     <script type="text/javascript" src="/static/vkey.js"></script>
     <script type="text/javascript" src="/static/drag.js"></script>
     <script type="text/javascript" src="/static/karistir.js"></script>
+    <script>
+      function control(){
+      var text = document.forms["myForm"]["mail"].value;
+      var pass = document.myForm.password.value;
+
+      var x=document.forms["myForm"]["mail"].value;
+      var atpos=x.indexOf("@");
+      var dotpos=x.lastIndexOf(".");
+      if (atpos<1 || dotpos<atpos+2 || dotpos+2>=x.length){
+		  alert("Mail adresi yanlış girildi tekrar yazın");
+		  return false;
+		  }
+		  else{
+		  if(text === "" || pass === ""){
+		  alert("Bütün boş alanları doldurunuz.");
+		  return false;
+		  }
+		  }
+		  }
+		  </script>
   </head>
   <body>
     <div id ="vkey" onmousedown="drag_start(this)" style="display: none;">
@@ -15,7 +35,7 @@
     <h1>{{ error }}!</h1>
     {% endif %}
     <table border = "0" align = "center">
-      <form method="POST" action="/login">
+      <form method="POST" action="/login" onsubmit="return control()">
 	<tr>
 	  <td>E-mail: </td>
 	  <td><input type="text" id="mail" name="mail"/></td>
