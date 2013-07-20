@@ -374,7 +374,7 @@ def verify_passwd(passwd, salt, digest):
     result = 0
     for x, y in zip(computed_digest, digest):
         result |= ord(x) ^ ord(y)
-        return result == 0
+    return result == 0
 
 
 if __name__ == '__main__':
