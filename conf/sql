@@ -1,0 +1,4 @@
+CREATE TABLE users (id bigserial primary key, mail varchar(50) NOT NULL, password varchar(70) NOT NULL, salt varchar(200) NOT NULL, is_active integer DEFAULT 0, last_loc varchar(5) NOT NULL);
+CREATE INDEX mail_index ON users(mail);
+CREATE TABLE activate (id bigserial primary key, uid bigserial references users(id), hash varchar(70) NOT NULL, date timestamp DEFAULT CURRENT_TIMESTAMP);
+

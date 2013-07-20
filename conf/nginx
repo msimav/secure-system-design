@@ -1,0 +1,21 @@
+ server {
+    listen 80;
+    server_name bil553.com;
+    return 301 https://bil553.com$request_uri;
+   }
+
+server {
+    listen 443;
+    ssl on;
+    ssl_certificate      /etc/nginx/ssl/server.crt;
+    ssl_certificate_key  /etc/nginx/ssl/server.key;
+
+    server_name bil533.com;
+
+
+    location / {
+	uwsgi_pass 127.0.0.1:8889;
+	include uwsgi_params;
+    }
+  }
+
