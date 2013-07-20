@@ -223,16 +223,24 @@ def digest_passwd(passwd, salt):
 
 Yukarıdaki kod bizim implementasyonumuzdan alınmıştır. Şifreyi \emph{salt} kullanarak \emph{1000} kez hash'ler.
 \subsection{Hash Karşılaştırırken Zamanlama Saldırılarından Kaçınma}
+Zamanlama saldırıları iki hash değeri karşılaştırılırken yapılabilecek saldırılardır. Bu nedenle karşılaştırma işlemi yapılacak yerde çalışan algoritma bu saldırılara karşı güvenli olmalıdır. Bu güvenlik algoritmanın her zaman aynı sürede karşılaştırma işlemi yapması ile sağlanabilir.
+
+Örnek vermek gerekirse string karşılaştırma işlemi greedy bir algoritma olduğu için ilk farkı gördüğünde sonlanacaktır. Bu da saldırdanın her seferinde 1 karakter doğru bularak en sonunda tüm hash değerine ulaşmasına imkan sağlayacaktır.
+
+Bunu önlemek için biz tüm değerleri tek tek XOR işlemine sokup sonuç sıfıra eşit mi diye baktık. Aşağıda bu yöntemi nasıl implement ettiğimiz gözükmektedir.
+
 \chapter{Haberleşme Kanalı Güvenliği}
 
 \section{İletişimin Şifrelenmesi için SSL protokolünü kullanmak}
-\section{SSL Üzerinde Çalışan Protokolün Güvenliği}
 
 
 \chapter{Kullanıcı Tarafı Güvenliği}
 \section{Keylogger'lara Karşı Sanal Klavye}
 \section{Fare Hareketlerinin Dinlenmesine Karşı Rastgele Tuşlar}
 \section{Farklı Ülkelerden Oturum Açmaya Karşı Hesap Kilitleme}
+\section{Şifre Değiştiren Kullanıcıya Mail İle Haber Verme}
+\section{SMS ile satış onayı}
+\section{Yapay Zeka ile Şifre Politikası Belirleme}
 
 \chapter{Sonuç}
 
