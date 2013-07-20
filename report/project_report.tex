@@ -1,4 +1,7 @@
-\documentclass[11pt]{report}
+\documentclass[11pt,a4paper]{report}
+
+\usepackage{fullpage}
+
 
 \usepackage[turkish]{babel}
 \usepackage[utf8]{inputenc}
@@ -22,7 +25,7 @@
 
 \chapter{Giriş}
 
-İnternet ve Veri Güvenliği dersi kapsamında, kullanıcıların kayıt olup giriş yapacakları, şifre değiştirme, şifre silme, kullanıcı hesabı silme gibi temel fonksiyonları olan bir sistemi güvenli bir şekilde tasarlamamız ve implement etmemiz gerekmektedir.
+İnternet ve Veri Güvenliği dersi kapsamında, kullanıcıların kayıt olup giriş yapacakları, şifre değiştirme, şifre sıfırlama, kullanıcı hesabı silme gibi temel fonksiyonları olan bir sistemi güvenli bir şekilde tasarlamamız ve implement etmemiz gerekmektedir.
 
 Bu raporda, proje kapsamında uyguladığımız güvenlik prensiplerinden bahsedip, bu prensipleri nasıl implement ettiğimizin detaylarını anlatacağız.
 
@@ -66,6 +69,11 @@ Zamanlama saldırılarının ciddiyeti konusundaki en önemli örnek Java'nın s
 Bu nedenlerden dolayı kripto ihtiyaçlarımızı, deneyimli insanlar tarafından implement edilmiş ve iyi test edilmiş kütüphaneler ile sağlamamız tavsiye edilmektedir. Biz de bu nedenle \emph{pycrypto} kütüphanesini kullanmaya karar verdik.
 
 \section{Rastgele Sayı Üreticisinin Kriptografik Güvenli Olması}
+Rastgele sayı üretmek, şifre sıfırlama gibi işlemler için gerekli bir fonksiyondur. Şifre sıfırlama işteğinin, gerçekten hesabın sahibi kullanıcıdan geldiğinden emin olmak için, güvenli bir kaynaktan (email gibi) doğrulama gerekmektedir. Bunun için de rastgele bir doğrulama kodu üreterek, kullanıcıya mail atıyoruz.
+
+Fakat bir saldırgan, başka bir hesap için şifre sıfırlama isteği açabilir ve üretilen rastgele sayıyı da tahmin ederek o hesabı ele geçirebilir.
+
+Bu saldırıya karşı, kriptografik olarak güvenli (tahmin edilemez) rastgele sayı üretici kullanmak koruma sağlayacaktır. Biz de \emph{pycrypto} kütüphanesi içindeki \emph{Random} sınıfını kullanarak rastgele sayı ürettik.
 
 \chapter{Sunucu Tarafı Güvenliği}
 
@@ -229,21 +237,121 @@ Zamanlama saldırıları iki hash değeri karşılaştırılırken yapılabilece
 
 Bunu önlemek için biz tüm değerleri tek tek XOR işlemine sokup sonuç sıfıra eşit mi diye baktık. Aşağıda bu yöntemi nasıl implement ettiğimiz gözükmektedir.
 
+\begin{lstlisting}[caption=Zamanlama Saldırılarına Karşı Sabit Zamanlı Karşılaştırma]
+def verify_passwd(passwd, salt, digest):
+    computed_digest = digest_passwd(passwd, salt)
+    result = 0
+    for x, y in zip(computed_digest, digest):
+        result |= ord(x) ^ ord(y)
+    return result == 0
+
+\end{lstlisting}
+
+\subsection{Sahte İsteklerin CAPTCHA ile Tesipti}
+İnternet üzerinde duran ve 7/24 hizmet veren bir servise, pek çok ilgisiz veya sahte istek gelebilir. Sadece kullanıcı tarafından yapılan isteklerin tespit edilmesi ve diğer isteklerin engellenmesi uygulama güvenliği için olmazsa olmazdır.
+
+Bunu yapmak için en çok kabul gören yöntem \emph{captcha} ismi verilen ve sadece insanlar tarafından çözülebilecek bilmeceler sormaktır.
+
+Bu yöntem için çeşitli kütüphaneler ve servisler mevcuttur. Özellikle google tarafından sunulan \emph{recaptcha} oldukça popülerdir. Fakat malesef biz bu özelliği implement edemedik.
+
 \chapter{Haberleşme Kanalı Güvenliği}
 
 \section{İletişimin Şifrelenmesi için SSL protokolünü kullanmak}
+İnternet güvensiz bir iletişim ortamı olduğu için, önemli bilgileri taşımak için uygun değildir. İnterneti güvenli hale getirmek için \emph{SSL protokolü} ortaya atılmıştır. Biz de kullanıcının şifresi gibi önemli bilgileri taşıdığımız için bu protokolü kullanmak zorundayız.
 
+SSL protokolü kullanmak için \emph{nginx}'in yeteneklerinden faydalandık. nginx SSL desteği ile gelen yetenekli bir web sunucudur. SSL desteğini aktif hale geçirmek için aşağıdaki ayarı yaptık.
+
+\begin{lstlisting}[caption=nginx SSL ayarları]
+ server {
+    listen 80;
+    server_name bil553.com;
+    return 301 https://bil553.com$request_uri;
+   }
+
+server {
+    listen 443;
+    ssl on;
+    ssl_certificate      /etc/nginx/ssl/server.crt;
+    ssl_certificate_key  /etc/nginx/ssl/server.key;
+
+    server_name bil533.com;
+
+
+    location / {
+	uwsgi_pass 127.0.0.1:8889;
+	include uwsgi_params;
+    }
+  }
+\end{lstlisting}
 
 \chapter{Kullanıcı Tarafı Güvenliği}
+
+Tüm sunucu ve iletişim kanalı güvenlik önlemlerinin yanında kullanıcı tarafında da güvenlik önlemi almak gereklidir.
+
 \section{Keylogger'lara Karşı Sanal Klavye}
+Kullanıcının bilgisayarında, klavye hareketlerini takip eden zararlı yazılım (keylogger) kurulu olabilir. Bu nedenle kullanıcıya sanal klavye sunmak önemli bir güvenlik önlemidir.
+
+Biz de \emph{JavaScript} kullanarak kullanıcıya bir sanal klavye sunuyoruz ve şifre bilgilerini bu klavye ile yazmasını zorunlu tutuyoruz.
+
+Bu yöntem kullanışlılık açısından biraz zorluk getirse de keylogger'lara karşı kullanıcıyı korumaktadır.
+
 \section{Fare Hareketlerinin Dinlenmesine Karşı Rastgele Tuşlar}
+Kullanıcının bilgisayarında, gelişmiş bir keylogger yazılımı olabilir ve bu yazılım fare hareketlerini de kaydediyor olabilir. Bu nedenle sanal klavyenin tuşlarının yerlerini karıştırmak bu zararlılara karşı koruma için önemlidir.
+
+Biz de kullanıcıya sunduğumuz sanal klavyenin tuşlarını karıştırarak kullanıcıyı bu zararlılardan korumayı amaçlıyoruz.
+
 \section{Farklı Ülkelerden Oturum Açmaya Karşı Hesap Kilitleme}
-\section{Şifre Değiştiren Kullanıcıya Mail İle Haber Verme}
+Kullanıcı her zaman oturum açtığı ülke dışından oturum açtıysa bir saldırı ile karşı karşıya olabilir. Bu yüzden biz, farklı ülkeden oturum açan kullanıcının hesabını geçici olarak pasif hale geçiriyoruz. Ve kendisine bu durumu belirten bir mail atıyoruz.
+
+Kullanıcı bu mail içindeki linke tıklayarak kendi hesabını aktif hale geçirip kullanmaya devam edebiliyor. Ya da bir saldırı ile karşı karşıya kalmışsa önlemini alabiliyor. Bu süreç içinde kullanıcı alım yapamıyor.
+
+\section{Şifre Sıfırlayan Kullanıcıya Mail İle Haber Verme}
+Önceden de belittiğimiz gibi, şifre sıfırlama esnasında saldırganın rastgele değeri tahmin etmeye şalışması nedeniyle şifre sıfırlama işlemlerinin aktif saldırılara zaafiyeti vardır. Bu olasılık 48 bitlik rastgele değer için $2^{48}$ olsa da hala bir risk teşkil etmektedir.
+
+Bu nedenle biz şifresini sıfırlayan kullanıcıya, şifre sıfırlama işlemi gerçekleştiğine dair mail göndererek, kendisini haberdar ediyoruz. Gönderdiğimiz mail'de işlemin gerçekleştiği IP adresini de göndererek kullanıcının bu işlemi kimin tarafından yaptıldığını tayin etmesini kolaylaştırmayı hedefliyoruz. Eğer işlem kendisi tarafından yapılmamışsa bize ulaşmasını söylüyoruz.
+
 \section{SMS ile satış onayı}
+Kullanıcının sisteme bildirdiği telefon numarası üzerinden, kullanıcı ile güvenli bir iletişim kanalı kurulabilir. Bu kanal sayasinde de doğrulama işlemleri yapılabilir. Örneğin satın alma işleminin SMS ile onaylanması sisteme sızan saldırganların satın alma yapmasını önleyecektir.
+
+Bu özelliği kullanmak için çeşitli kütüphaneler ve servisler mecvuttur. Örneğin \emph{sms} kütüphanesi enfora gsm modemleri ile mesaj gönderip almayı sağlarken, \emph{twilio.com} gibi kuruluşlar SMS hizmeti sağlamaktadır. Birinci yöntem için de gereken donanımlara, ikinci yöntem için de servis bedelini karşılayacak paraya sahip olmadığımız için bu özelliği implement edemedik.
+
 \section{Yapay Zeka ile Şifre Politikası Belirleme}
+Şifrelere yapılan saldırıların önemli bir çoğunluğu \emph{dictionary attack} denilen olası şifre listelerindeki her bir girdiyi tek tek deneyerek yapılmaktadır. Bizim de derslerin lab uygulaması sırasında kullandığımız \emph{john the ripper} aracı bu maktık ile çalışmaktadır.
+
+Bunu göz önünde bulundurarak, şifre politikası şu şekilde belirlenebilir:
+\begin{enumerate}
+\item Örnek bir olası şifre listesi bul
+\item Kullanıcının şifresinin herhabgi bir şifre listesinde bulunabilme olasılığını yapay zeka methodları ile hesapla
+\item bu olasılık belirlenen oranın üzerinde ise şifreyi reddet
+\end{enumerate}
+
+Böylece kullanıcı şifrelerinin çalınması durumunda, şifrelerin hesaplanabilmesi olasılığını iyice düşürebiliriz. Bu yöntemin implementasyonu, başlı başına bir yapay zeka dersi projesi olabileceği için bu yöntemi implement etmedik.
 
 \chapter{Sonuç}
+Sistem güvenliği, sistem içinde çalışan bütün parçaların güvenliği demektir. Unutmamak gerekir ki bir sistemin güvenliği, en zayıf halkasının güvenliği kadardır. Biz de bu proje kapsamında sunucudan kullanıcıya kadar her parçası ile güvenli bir sistem tasarlamaya çalıştık. Bunu yaparken de kripto araçlarından faydalandık.
 
+Yaptıklarımızı özetlememiz gerekirse:
+\begin{enumerate}
+\item Hazır Kripto Kütüphanesi Kullanmak
+\item Rastgele Sayı Üreticisinin Kriptografik Güvenli Olması
+\item Güvenilir Kaynaklardan Yazılım Yüklemek
+\item Uzaktan Erişimin Güvenliğini Arttırmak
+\item Güvenlik Duvarı
+\item Veri Tabanına Erişimi Kısıtlamak
+\item SQL Injection Saldırılarına Karşı Önlem Almak
+\item Şifrelerin Açık Bir Şekilde Saklanmaması
+\item Hash İşlemi Sırasında Salt Kullanılması
+\item Hash İşlemini İteratif Yapılması
+\item Hash Karşılaştırırken Zamanlama Saldırılarından Kaçınma
+\item Sahte İsteklerin CAPTCHA ile Tesipti
+\item İletişimin Şifrelenmesi için SSL protokolünü kullanmak
+\item Keylogger'lara Karşı Sanal Klavye
+\item Fare Hareketlerinin Dinlenmesine Karşı Rastgele Tuşlar
+\item Farklı Ülkelerden Oturum Açmaya Karşı Hesap Kilitleme
+\item Şifre Sıfırlayan Kullanıcıya Mail İle Haber Verme
+\item SMS ile satış onayı
+\item Yapay Zeka ile Şifre Politikası Belirleme
+\end{enumerate}
 
 \begin{thebibliography}{9}
 
