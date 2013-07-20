@@ -33,3 +33,11 @@ def change(mail, ip):
 Bil553.com sitesindeki şifre değiştirme işlemi {1} nolu ipden gerçekleşmiştir.
 Eğer bu işlemi siz yapmadıysanız bizim ile irtibata geçiniz.
 """.format(mail, ip)
+
+
+def remove(mail, link):
+    return """Merhaba {0},
+
+Bil553.com sitesindeki hesabınızı silme işlemlerini tamamlamak için, aşağıdaki linki kullanmalısınız.
+
+{1}""".format(mail, link)

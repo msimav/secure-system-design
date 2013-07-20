@@ -117,6 +117,9 @@ def forgotpassword():
         user = cursor.fetchone()
         cursor.execute(SQL_ACT, (user[0], code))
         act = cursor.fetchone()
+        if not act:
+            return 'Hatalı İstek'
+
         now = datetime.now()
 
         cursor.execute(SQL_DEL, (act[0], ))
@@ -199,6 +202,50 @@ def changepassword():
     return render_template('reset.html')
 
 
+@app.route('/remove')
+def remove():
+    if 'user' not in session:  # If not logged in
+        return redirect(url_for('login'))
+
+    SQL_ACT = 'SELECT * FROM activate a WHERE a.uid = %s AND hash = %s;'
+    SQL_DEL_ACT = 'DELETE FROM activate a WHERE a.id = %s;'
+    SQL_DEL_USR = 'DELETE FROM users u WHERE u.id = %s;'
+    SQL_MAIL = 'INSERT INTO activate (uid, hash) VALUES (%s, %s);'
+
+    code = request.args.get('h', '')
+    mail = request.args.get('mail', '')
+    user = session['user']
+
+    if code and mail:
+        cursor.execute(SQL_ACT, (user[0], code))
+        act = cursor.fetchone()
+        if not act:
+            return 'Hatalı İstek'
+        now = datetime.now()
+
+        if (now - act[3]) > timedelta(hours=1):
+            cursor.execute(SQL_DEL_ACT, (act[0], ))
+            con.commit()
+            error = 'İstek Zaman Aşımına Uğramış!'
+            return render_template('profile.html', mail=user[1], error=error)
+        else:
+            cursor.execute(SQL_DEL_ACT, (act[0], ))
+            cursor.execute(SQL_DEL_USR, (user[0], ))
+            con.commit()
+            return redirect(url_for('logout'))
+    else:
+        random_str = generate_random_str()
+        cursor.execute(SQL_MAIL, (user[0], random_str))
+        con.commit()
+
+        send_mail(user[1], 'Hesal Silme',
+                  strings.remove(user[1],
+                                 get_link('remove', {'h': random_str,
+                                                     'mail': user[1]})))
+
+        return 'Silme işlemini tamamlamak için mailinize gönderilen linke tıklayın.'
+
+
 @app.route('/activate', methods=['GET', 'POST'])
 def activate():
     SQL_USER = 'SELECT * FROM users u WHERE u.mail = %s;'
@@ -215,6 +262,9 @@ def activate():
         user = cursor.fetchone()
         cursor.execute(SQL_ACT, (user[0], accode))
         act = cursor.fetchone()
+        if not act:
+            return 'Hatalı İstek'
+
         now = datetime.now()
 
         if (now - act[3]) > timedelta(hours=1):

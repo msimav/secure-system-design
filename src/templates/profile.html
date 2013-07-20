@@ -2,6 +2,15 @@
   <head>
     <meta charset="utf-8">
     <link rel="stylesheet" href="/static/vkey.css" type="text/css" />
+    <script>
+      function diyalog(){
+      var x;
+      var r=confirm("Hesabınızı silmek için onaylayın!");
+      if (r != true){
+      return false;
+      }
+      }
+    </script>
   </head>
   <body>
     <table border = "0" align = "center">
@@ -12,8 +21,8 @@
       <tr><td><h4 class="ok">Sistemi Güvenle Kullanabilirsiniz.</h4></td></tr>
       {% endif %}
       <tr><td><a href = "/logout">Çıkış için tıklayın</a></td></
-      <tr><td><a href = "/changepass">Şifrenizi değiştirmek için tıklayın.</a></td></tr>
-      <tr><td><a href = "/remove">Hesabınızı SİLMEK için tıklayın.</a></td></tr>
+								 <tr><td><a href = "/changepass">Şifrenizi değiştirmek için tıklayın.</a></td></tr>
+      <tr><td><a href = "/remove" onclick = "return diyalog()">Hesabınızı SİLMEK için tıklayın.</a></td></tr>
     </table>
   </body>
 </html>
